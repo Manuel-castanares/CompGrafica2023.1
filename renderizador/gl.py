@@ -277,7 +277,7 @@ class GL:
                         gpu.GPU.draw_pixels(
                             [int(x), int(y)],
                             gpu.GPU.RGB8,
-                            [0, 0, 255],
+                            [e[0], e[1], e[2]],
                         )
 
     @staticmethod
