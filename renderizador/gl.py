@@ -43,16 +43,17 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
         # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
         emissive_colors = colors["emissiveColor"]
+        e = [0, 0, 0]
         for i in range(0, len(emissive_colors)):
-            emissive_colors[i] *= 255
+            e[i] = int(emissive_colors[i]) * 255
         counter = 0
         while counter < len(point):
             gpu.GPU.set_pixel(
                 int(point[counter]),
                 int(point[counter + 1]),
-                int(emissive_colors[0]),
-                int(emissive_colors[1]),
-                int(emissive_colors[2]),
+                int(e[0]),
+                int(e[1]),
+                int(e[2]),
             )
             counter += 2
         # Exemplo:
