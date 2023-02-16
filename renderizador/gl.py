@@ -58,10 +58,7 @@ class GL:
         # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Polypoint2D : pontos = {0}".format(point))  # imprime no terminal pontos
-        print(
-            "Polypoint2D : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
+
         emissive_colors = colors["emissiveColor"]
         e = [0, 0, 0]
         for i in range(0, len(emissive_colors)):
@@ -200,11 +197,11 @@ class GL:
         # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
+        
         emissive_colors = colors["emissiveColor"]
         e = [0, 0, 0]
         for i in range(0, len(emissive_colors)):
-            e[i] = int(emissive_colors[i]) * 255
+            e[i] = int(emissive_colors[i]* 255)
 
         minX = int(min([vertices[0], vertices[2], vertices[4]]))
         maxX = int(max([vertices[0], vertices[2], vertices[4]]))
@@ -274,30 +271,7 @@ class GL:
                 int(p3[0][0]),
                 int(p3[1][0]),
             ]
-
-            emissive_colors = colors["emissiveColor"]
-            e = [0, 0, 0]
-            for i in range(0, len(emissive_colors)):
-                e[i] = int(emissive_colors[i] * 255)
-    
-            minX = int(min([points[0], points[2], points[4]]))
-            maxX = int(max([points[0], points[2], points[4]]))
-            minY = int(min([points[1], points[3], points[5]]))
-            maxY = int(max([points[1], points[3], points[5]]))
-
-            def L(x0, y0, x1, y1, x, y):
-                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-            for x in range(minX, maxX + 1):
-                for y in range(minY, maxY + 1):
-                    L1 = L(points[0], points[1], points[2], points[3], x, y)
-                    L2 = L(points[2], points[3], points[4], points[5], x, y)
-                    L3 = L(points[4], points[5], points[0], points[1], x, y)
-                    if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                        gpu.GPU.draw_pixel(
-                            [int(x), int(y)],
-                            gpu.GPU.RGB8,
-                            [e[0], e[1], e[2]],
-                        )
+            GL.triangleSet2D(points, colors)
 
     @staticmethod
     def calc_rotation(rot):
@@ -410,9 +384,9 @@ class GL:
         GL.stack.append(GL.transformation_matrix)
 
         if translation:
-            print(
-                "translation = {0} ".format(translation), end=""
-            )  # imprime no terminal
+            #print(
+            #    "translation = {0} ".format(translation), end=""
+            #)  # imprime no terminal
             translation_matrix = np.array(
                 [
                     [1, 0, 0, translation[0]],
@@ -422,7 +396,7 @@ class GL:
                 ]
             )
         if scale:
-            print("scale = {0} ".format(scale), end="")  # imprime no terminal
+            #print("scale = {0} ".format(scale), end="")  # imprime no terminal
             scale_matrix = np.array(
                 [
                     [scale[0], 0, 0, 0],
@@ -432,7 +406,8 @@ class GL:
                 ]
             )
         if rotation:
-            print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
+            pass
+            #print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
 
         temp = np.matmul(translation_matrix, GL.calc_rotation(rotation))
         temp = np.matmul(temp, scale_matrix)
