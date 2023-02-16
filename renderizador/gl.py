@@ -73,18 +73,43 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-        print(
-            "Polyline2D : lineSegments = {0}".format(lineSegments)
-        )  # imprime no terminal
-        print(
-            "Polyline2D : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
-        # Exemplo:
-        pos_x = GL.width // 2
-        pos_y = GL.height // 2
-        gpu.GPU.set_pixel(
-            pos_x, pos_y, 255, 0, 0
-        )  # altera um pixel da imagem (u, v, r, g, b)
+        emissive_colors = colors["emissiveColor"]
+        e = [0, 0, 0]
+        for i in range(0, len(emissive_colors)):
+            e[i] = int(emissive_colors[i]) * 255
+
+        dX = lineSegments[2] - lineSegments[0]
+        dY = lineSegments[3] - lineSegments[1]
+        
+        s = dY / dX
+        print(s)
+        if(s < 1):
+            v = lineSegments[1]
+            for x in range(int(lineSegments[0]), int(lineSegments[2] + 1)):
+
+                gpu.GPU.set_pixel(
+                    int(x),
+                    int(round(v)),
+                    int(e[0]),
+                    int(e[1]),
+                    int(e[2]),
+                )
+                v += s
+        else:
+            s = dX / dY
+            v = lineSegments[0]
+            for y in range(int(lineSegments[1]), int(lineSegments[3])):
+
+                gpu.GPU.set_pixel(
+                    int(round(v)),
+                    int(y),
+                    int(e[0]),
+                    int(e[1]),
+                    int(e[2]),
+                )
+                v += s
+
+        
 
     @staticmethod
     def triangleSet2D(vertices, colors):
