@@ -50,16 +50,14 @@ class GL:
         # pelo tamanho da lista e assuma que sempre vira uma quantidade par de valores.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
         # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Polypoint2D : pontos = {0}".format(point))  # imprime no terminal pontos
-        print(
-            "Polypoint2D : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
         emissive_colors = colors["emissiveColor"]
         e = [0, 0, 0]
         for i in range(0, len(emissive_colors)):
+<<<<<<< HEAD
             e[i] = int(emissive_colors[i]) * 255
+=======
+            emissive_colors[i] *= 255
+>>>>>>> 85867dd (tirando comentarios)
         counter = 0
 
         while counter < len(point):
