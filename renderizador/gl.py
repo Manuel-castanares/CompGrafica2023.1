@@ -55,7 +55,7 @@ class GL:
         counter = 0
 
         while counter < len(point):
-            gpu.GPU.draw_pixel(
+            gpu.GPU.draw_pixels(
                 [int(point[counter]), int(point[counter + 1])],
                 gpu.GPU.RGB8,
                 [int(e[0]), int(e[1]), int(e[2])]
@@ -68,7 +68,7 @@ class GL:
         # Exemplo:
         pos_x = GL.width//2
         pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
+        gpu.GPU.draw_pixels([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
         
     @staticmethod
@@ -103,7 +103,7 @@ class GL:
             step = 1
 
             for x in range(begin, end, step):
-                gpu.GPU.draw_pixel(
+                gpu.GPU.draw_pixels(
                     [int(x),
                     int(round(v))],
                     gpu.GPU.RGB8,
@@ -125,7 +125,7 @@ class GL:
                 end = int(lineSegments[3])
             for y in range(begin, end):
 
-                gpu.GPU.draw_pixel(
+                gpu.GPU.draw_pixels(
                     [int(round(v)),
                     int(y)],
                     gpu.GPU.RGB8,
@@ -140,7 +140,7 @@ class GL:
             v = lineSegments[2]
             for y in range(int(lineSegments[3]), int(lineSegments[1])):
 
-                gpu.GPU.draw_pixel(
+                gpu.GPU.draw_pixels(
                     [int(round(v)),
                     int(y)],
                     gpu.GPU.RGB8,
@@ -154,7 +154,7 @@ class GL:
 
             for x in range(int(lineSegments[2]), int(lineSegments[0])):
 
-                gpu.GPU.draw_pixel(
+                gpu.GPU.draw_pixels(
                     [int(x),
                     int(round(v))],
                     gpu.GPU.RGB8,
@@ -167,7 +167,7 @@ class GL:
             if(dX == 0):
                 v = lineSegments[0]
                 for y in range(int(lineSegments[1]), int(lineSegments[3])):
-                    gpu.GPU.draw_pixel(
+                    gpu.GPU.draw_pixels(
                         [int(round(v)),
                         int(y)],
                         gpu.GPU.RGB8,
@@ -178,7 +178,7 @@ class GL:
             else:
                 v = lineSegments[1]
                 for x in range(int(lineSegments[0]), int(lineSegments[2])):
-                    gpu.GPU.draw_pixel(
+                    gpu.GPU.draw_pixels(
                         [int(x),
                         int(round(v))],
                         gpu.GPU.RGB8,
@@ -220,7 +220,7 @@ class GL:
                 L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x, y)
                 L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x, y)
                 if(L1 >= 0 and L2 >= 0 and L3 >= 0):
-                    gpu.GPU.draw_pixel(
+                    gpu.GPU.draw_pixels(
                         [int(x),
                         int(y)],
                         gpu.GPU.RGB8,
@@ -250,7 +250,7 @@ class GL:
         )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -323,7 +323,7 @@ class GL:
         )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -349,7 +349,7 @@ class GL:
         )  # imprime as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def box(size, colors):
@@ -366,7 +366,7 @@ class GL:
         print("Box : colors = {0}".format(colors))  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def indexedFaceSet(
@@ -422,7 +422,7 @@ class GL:
         )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def sphere(radius, colors):
