@@ -227,52 +227,55 @@ class GL:
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        n_triangle = int(len(point)/9)
 
         final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
-
-        p1 = np.array([[point[0]], [point[1]], [point[2]], [1]])
-        p2 = np.array([[point[3]], [point[4]], [point[5]], [1]])
-        p3 = np.array([[point[6]], [point[7]], [point[8]], [1]])
-
-        p1 = np.matmul(final_matrix, p1)
-        p2 = np.matmul(final_matrix, p2)
-        p3 = np.matmul(final_matrix, p3)
-
-        p1 = p1 / p1[3][0]
-        p2 = p2 / p2[3][0]
-        p3 = p3 / p3[3][0]
-
-        points = [int(p1[0][0]), int(p1[1][0]), int(p2[0][0]), int(p2[1][0]), int(p3[0][0]), int(p3[1][0])]
-
-        print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
-        print(
-            "TriangleSet : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
-        print(points)
-        emissive_colors = colors["emissiveColor"]
-        e = [0, 0, 0]
-        for i in range(0, len(emissive_colors)):
-            e[i] = int(emissive_colors[i]) * 255
-
-        minX = int(min([points[0], points[2], points[4]]))
-        maxX = int(max([points[0], points[2], points[4]]))
-        minY = int(min([points[1], points[3], points[5]]))
-        maxY = int(max([points[1], points[3], points[5]]))
-
-        def L(x0, y0, x1, y1, x, y):
-            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
         
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                L1 = L(points[0], points[1], points[2], points[3], x, y)
-                L2 = L(points[2], points[3], points[4], points[5], x, y)
-                L3 = L(points[4], points[5], points[0], points[1], x, y)
-                if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                    gpu.GPU.draw_pixels(
-                        [int(x), int(y)],
-                        gpu.GPU.RGB8,
-                        [int(e[0]), int(e[1]), int(e[2])],
-                    )
+        for i in range(n_triangle):
+            
+            p1 = np.array([[point[0 + 9*i]], [point[1 + 9*i]], [point[2 + 9*i]], [1]])
+            p2 = np.array([[point[3 + 9*i]], [point[4 + 9*i]], [point[5 + 9*i]], [1]])
+            p3 = np.array([[point[6 + 9*i]], [point[7 + 9*i]], [point[8 + 9*i]], [1]])
+
+            p1 = np.matmul(final_matrix, p1)
+            p2 = np.matmul(final_matrix, p2)
+            p3 = np.matmul(final_matrix, p3)
+
+            p1 = p1 / p1[3][0]
+            p2 = p2 / p2[3][0]
+            p3 = p3 / p3[3][0]
+
+            points = [int(p1[0][0]), int(p1[1][0]), int(p2[0][0]), int(p2[1][0]), int(p3[0][0]), int(p3[1][0])]
+
+            print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
+            print(
+                "TriangleSet : colors = {0}".format(colors)
+            )  # imprime no terminal as cores
+            print(points)
+            emissive_colors = colors["emissiveColor"]
+            e = [0, 0, 0]
+            for i in range(0, len(emissive_colors)):
+                e[i] = int(emissive_colors[i]) * 255
+
+            minX = int(min([points[0], points[2], points[4]]))
+            maxX = int(max([points[0], points[2], points[4]]))
+            minY = int(min([points[1], points[3], points[5]]))
+            maxY = int(max([points[1], points[3], points[5]]))
+
+            def L(x0, y0, x1, y1, x, y):
+                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+            
+            for x in range(minX, maxX + 1):
+                for y in range(minY, maxY + 1):
+                    L1 = L(points[0], points[1], points[2], points[3], x, y)
+                    L2 = L(points[2], points[3], points[4], points[5], x, y)
+                    L3 = L(points[4], points[5], points[0], points[1], x, y)
+                    if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                        gpu.GPU.draw_pixels(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [0, 0, 255],
+                        )
 
     @staticmethod
     def calc_rotation(rot):
