@@ -15,6 +15,12 @@ import time  # Para operações com tempo
 
 import gpu  # Simula os recursos de uma GPU
 
+import numpy as np
+
+import math
+
+# transformation_global = None
+
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -31,6 +37,8 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
+        GL.transformation_matrix = None
+        GL.look_at = None
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -58,7 +66,7 @@ class GL:
             gpu.GPU.draw_pixels(
                 [int(point[counter]), int(point[counter + 1])],
                 gpu.GPU.RGB8,
-                [int(e[0]), int(e[1]), int(e[2])]
+                [int(e[0]), int(e[1]), int(e[2])],
             )
             counter += 2
         # Exemplo:
@@ -66,11 +74,13 @@ class GL:
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
 
         # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.draw_pixels([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
+        pos_x = GL.width // 2
+        pos_y = GL.height // 2
+        gpu.GPU.draw_pixels(
+            [pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0]
+        )  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
-        
+
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
@@ -91,12 +101,12 @@ class GL:
 
         dX = lineSegments[2] - lineSegments[0]
         dY = lineSegments[3] - lineSegments[1]
-        if(dX == 0 or dY == 0):
+        if dX == 0 or dY == 0:
             s = 0
         else:
             s = dY / dX
 
-        if(s < 1 and s > 0): 
+        if s < 1 and s > 0:
             v = lineSegments[1]
             begin = int(lineSegments[0])
             end = int(lineSegments[2])
@@ -104,18 +114,15 @@ class GL:
 
             for x in range(begin, end, step):
                 gpu.GPU.draw_pixels(
-                    [int(x),
-                    int(round(v))],
+                    [int(x), int(round(v))],
                     gpu.GPU.RGB8,
-                    [int(e[0]),
-                    int(e[1]),
-                    int(e[2])],
+                    [int(e[0]), int(e[1]), int(e[2])],
                 )
                 v += s
 
-        elif(s > 1):
+        elif s > 1:
             s = dX / dY
-            if(dX < 0):
+            if dX < 0:
                 v = lineSegments[2]
                 begin = int(lineSegments[3])
                 end = int(lineSegments[1])
@@ -124,71 +131,50 @@ class GL:
                 begin = int(lineSegments[1])
                 end = int(lineSegments[3])
             for y in range(begin, end):
-
                 gpu.GPU.draw_pixels(
-                    [int(round(v)),
-                    int(y)],
+                    [int(round(v)), int(y)],
                     gpu.GPU.RGB8,
-                    [int(e[0]),
-                    int(e[1]),
-                    int(e[2])],
+                    [int(e[0]), int(e[1]), int(e[2])],
                 )
 
                 v += s
-        elif(s < -1):
-            s = (dX / dY)
+        elif s < -1:
+            s = dX / dY
             v = lineSegments[2]
             for y in range(int(lineSegments[3]), int(lineSegments[1])):
-
                 gpu.GPU.draw_pixels(
-                    [int(round(v)),
-                    int(y)],
+                    [int(round(v)), int(y)],
                     gpu.GPU.RGB8,
-                    [int(e[0]),
-                    int(e[1]),
-                    int(e[2])],
+                    [int(e[0]), int(e[1]), int(e[2])],
                 )
                 v += s
-        elif(s < 0 and s > -1):
+        elif s < 0 and s > -1:
             v = lineSegments[1]
 
             for x in range(int(lineSegments[2]), int(lineSegments[0])):
-
                 gpu.GPU.draw_pixels(
-                    [int(x),
-                    int(round(v))],
+                    [int(x), int(round(v))],
                     gpu.GPU.RGB8,
-                    [int(e[0]),
-                    int(e[1]),
-                    int(e[2])],
+                    [int(e[0]), int(e[1]), int(e[2])],
                 )
                 v += s
         else:
-            if(dX == 0):
+            if dX == 0:
                 v = lineSegments[0]
                 for y in range(int(lineSegments[1]), int(lineSegments[3])):
                     gpu.GPU.draw_pixels(
-                        [int(round(v)),
-                        int(y)],
+                        [int(round(v)), int(y)],
                         gpu.GPU.RGB8,
-                        [int(e[0]),
-                        int(e[1]),
-                        int(e[2])],
+                        [int(e[0]), int(e[1]), int(e[2])],
                     )
             else:
                 v = lineSegments[1]
                 for x in range(int(lineSegments[0]), int(lineSegments[2])):
                     gpu.GPU.draw_pixels(
-                        [int(x),
-                        int(round(v))],
+                        [int(x), int(round(v))],
                         gpu.GPU.RGB8,
-                        [int(e[0]),
-                        int(e[1]),
-                        int(e[2])],
+                        [int(e[0]), int(e[1]), int(e[2])],
                     )
-
-
-
 
     @staticmethod
     def triangleSet2D(vertices, colors):
@@ -212,21 +198,18 @@ class GL:
         maxY = int(max([vertices[1], vertices[3], vertices[5]]))
 
         def L(x0, y0, x1, y1, x, y):
-            return ((y1 - y0)*x - (x1 - x0)*y + y0*(x1 - x0) - x0*(y1 - y0))
+            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
 
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
                 L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x, y)
                 L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x, y)
                 L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x, y)
-                if(L1 >= 0 and L2 >= 0 and L3 >= 0):
+                if L1 >= 0 and L2 >= 0 and L3 >= 0:
                     gpu.GPU.draw_pixels(
-                        [int(x),
-                        int(y)],
+                        [int(x), int(y)],
                         gpu.GPU.RGB8,
-                        [int(e[0]),
-                        int(e[1]),
-                        int(e[2])],
+                        [int(e[0]), int(e[1]), int(e[2])],
                     )
 
     @staticmethod
@@ -244,13 +227,63 @@ class GL:
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+
+        final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
+
+        p1 = np.array([[point[0]], [point[1]], [point[2]], [1]])
+        p2 = np.array([[point[3]], [point[4]], [point[5]], [1]])
+        p3 = np.array([[point[6]], [point[7]], [point[8]], [1]])
+
+        p1 = np.matmul(final_matrix, p1)
+        p2 = np.matmul(final_matrix, p2)
+        p3 = np.matmul(final_matrix, p3)
+
+        p1 = p1 / p1[3][0]
+        p2 = p2 / p2[3][0]
+        p3 = p3 / p3[3][0]
+
+        GL.triangleSet2D([p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]], colors)
+
         print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
         print(
             "TriangleSet : colors = {0}".format(colors)
         )  # imprime no terminal as cores
+        print("transf = {0}".format(GL.transformation_matrix))
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
+    @staticmethod
+    def calc_rotation(rot):
+        qi = rot[0] * (math.sin(math.radians(rot[3]) / 2))
+        qj = rot[1] * (math.sin(math.radians(rot[3]) / 2))
+        qk = rot[2] * (math.sin(math.radians(rot[3]) / 2))
+        qr = math.cos(math.radians(rot[3]) / 2)
+
+        rotation_matrix = np.array(
+            [
+                [
+                    (1 - 2 * ((qj**2) + (qk**2))),
+                    (2 * (qi * qj - qk * qr)),
+                    (2 * (qi * qk + qj * qr)),
+                    0,
+                ],
+                [
+                    (2 * (qi * qj + qk * qr)),
+                    (1 - 2 * ((qi**2) + (qk**2))),
+                    (2 * (qj * qk - qi * qr)),
+                    0,
+                ],
+                [
+                    (2 * (qi * qk - qj * qr)),
+                    (2 * (qj * qk + qi * qr)),
+                    (1 - 2 * ((qi**2) + (qj**2))),
+                    0,
+                ],
+                [0, 0, 0, 1],
+            ]
+        )
+        return rotation_matrix
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -258,12 +291,61 @@ class GL:
         # Na função de viewpoint você receberá a posição, orientação e campo de visão da
         # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
-
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        position_matrix = np.array(
+            [
+                [1, 0, 0, -position[0]],
+                [0, 1, 0, -position[1]],
+                [0, 0, 1, -position[2]],
+                [0, 0, 0, 1],
+            ]
+        )
+        orientation_matrix = GL.calc_rotation(orientation).transpose()
+        GL.look_at = np.matmul(orientation_matrix, position_matrix)
+
+        multiplicador = GL.height / (((GL.height**2) + (GL.width**2)) ** 0.5)
+
+        FOVy = 2 * math.atan(math.tan(fieldOfView / 2) * multiplicador)
+
+        aspect = GL.width / GL.height
+
+        top = GL.near * math.tan(FOVy)
+        bottom = -top
+        right = top * aspect
+        left = -right
+
+        P = np.array(
+            [
+                [GL.near / right, 0, 0, 0],
+                [0, GL.near / top, 0, 0],
+                [
+                    0,
+                    0,
+                    -((GL.far + GL.near) / (GL.far - GL.near)),
+                    -2 * (GL.far * GL.near) / (GL.far - GL.near),
+                ],
+                [0, 0, -1, 0],
+            ]
+        )
+
+        screen = np.array(
+            [
+                [GL.width / 2, 0, 0, GL.width / 2],
+                [0, -GL.height / 2, 0, GL.height / 2],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+            ]
+        )
+
+        GL.look_at = np.matmul(P, GL.look_at)
+
+        GL.look_at = np.matmul(screen, GL.look_at)
+
         print("Viewpoint : ", end="")
         print("position = {0} ".format(position), end="")
         print("orientation = {0} ".format(orientation), end="")
         print("fieldOfView = {0} ".format(fieldOfView))
+        print("Look at = {0}".format(GL.look_at))
 
     @staticmethod
     def transform_in(translation, scale, rotation):
@@ -275,6 +357,7 @@ class GL:
         # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
+        # Escala, rotação, translação
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Transform : ", end="")
@@ -282,10 +365,31 @@ class GL:
             print(
                 "translation = {0} ".format(translation), end=""
             )  # imprime no terminal
+            translation_matrix = np.array(
+                [
+                    [1, 0, 0, translation[0]],
+                    [0, 1, 0, translation[1]],
+                    [0, 0, 1, translation[2]],
+                    [0, 0, 0, 1],
+                ]
+            )
         if scale:
             print("scale = {0} ".format(scale), end="")  # imprime no terminal
+            scale_matrix = np.array(
+                [
+                    [scale[0], 0, 0, 0],
+                    [0, scale[1], 0, 0],
+                    [0, 0, scale[2], 0],
+                    [0, 0, 0, 1],
+                ]
+            )
         if rotation:
             print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
+
+        temp = np.matmul(translation_matrix, GL.calc_rotation(rotation))
+
+        GL.transformation_matrix = np.matmul(temp, scale_matrix)
+
         print("")
 
     @staticmethod
