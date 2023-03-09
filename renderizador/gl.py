@@ -82,11 +82,13 @@ class GL:
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
 
         # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
+        pos_x = GL.width // 2
+        pos_y = GL.height // 2
+        gpu.GPU.draw_pixel(
+            [pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0]
+        )  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
-        
+
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
@@ -235,35 +237,44 @@ class GL:
         # tipos de cores.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        n_triangle = int(len(point)/9)
+        n_triangle = int(len(point) / 9)
 
         final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
-        
+
         for i in range(n_triangle):
-            
-            p1 = np.array([[point[0 + 9*i]], [point[1 + 9*i]], [point[2 + 9*i]], [1]])
-            p2 = np.array([[point[3 + 9*i]], [point[4 + 9*i]], [point[5 + 9*i]], [1]])
-            p3 = np.array([[point[6 + 9*i]], [point[7 + 9*i]], [point[8 + 9*i]], [1]])
+            p1 = np.array(
+                [[point[0 + 9 * i]], [point[1 + 9 * i]], [point[2 + 9 * i]], [1]]
+            )
+            p2 = np.array(
+                [[point[3 + 9 * i]], [point[4 + 9 * i]], [point[5 + 9 * i]], [1]]
+            )
+            p3 = np.array(
+                [[point[6 + 9 * i]], [point[7 + 9 * i]], [point[8 + 9 * i]], [1]]
+            )
 
             p1 = np.matmul(final_matrix, p1)
             p2 = np.matmul(final_matrix, p2)
             p3 = np.matmul(final_matrix, p3)
 
-
-
             p1 = p1 / p1[3][0]
             p2 = p2 / p2[3][0]
             p3 = p3 / p3[3][0]
 
-
-            points = [int(p1[0][0]), int(p1[1][0]), int(p2[0][0]), int(p2[1][0]), int(p3[0][0]), int(p3[1][0])]
+            points = [
+                int(p1[0][0]),
+                int(p1[1][0]),
+                int(p2[0][0]),
+                int(p2[1][0]),
+                int(p3[0][0]),
+                int(p3[1][0]),
+            ]
 
             print("TriangleSet : pontos = {0}".format(p1))  # imprime no terminal pontos
             print(
                 "TriangleSet : colors = {0}".format(colors)
             )  # imprime no terminal as cores
             print(points)
-            emissive_colors = colors["diffuseColor"]
+            emissive_colors = colors["emissiveColor"]
             e = [0, 0, 0]
             for i in range(0, len(emissive_colors)):
                 e[i] = int(emissive_colors[i]) * 255
@@ -275,6 +286,7 @@ class GL:
 
             def L(x0, y0, x1, y1, x, y):
                 return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+
             print(e)
             for x in range(minX, maxX + 1):
                 for y in range(minY, maxY + 1):
