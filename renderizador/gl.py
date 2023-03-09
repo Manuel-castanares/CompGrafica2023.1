@@ -241,13 +241,16 @@ class GL:
             p2 = np.matmul(final_matrix, p2)
             p3 = np.matmul(final_matrix, p3)
 
+
+
             p1 = p1 / p1[3][0]
             p2 = p2 / p2[3][0]
             p3 = p3 / p3[3][0]
 
+
             points = [int(p1[0][0]), int(p1[1][0]), int(p2[0][0]), int(p2[1][0]), int(p3[0][0]), int(p3[1][0])]
 
-            print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
+            print("TriangleSet : pontos = {0}".format(p1))  # imprime no terminal pontos
             print(
                 "TriangleSet : colors = {0}".format(colors)
             )  # imprime no terminal as cores
@@ -264,7 +267,7 @@ class GL:
 
             def L(x0, y0, x1, y1, x, y):
                 return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-            
+            print(e)
             for x in range(minX, maxX + 1):
                 for y in range(minY, maxY + 1):
                     L1 = L(points[0], points[1], points[2], points[3], x, y)
@@ -279,10 +282,10 @@ class GL:
 
     @staticmethod
     def calc_rotation(rot):
-        qi = rot[0] * (math.sin(math.radians(rot[3]) / 2))
-        qj = rot[1] * (math.sin(math.radians(rot[3]) / 2))
-        qk = rot[2] * (math.sin(math.radians(rot[3]) / 2))
-        qr = math.cos(math.radians(rot[3]) / 2)
+        qi = rot[0] * (math.sin(rot[3] / 2))
+        qj = rot[1] * (math.sin(rot[3] / 2))
+        qk = rot[2] * (math.sin(rot[3] / 2))
+        qr = math.cos(rot[3] / 2)
 
         rotation_matrix = np.array(
             [
@@ -413,8 +416,6 @@ class GL:
         temp = np.matmul(translation_matrix, GL.calc_rotation(rotation))
 
         GL.transformation_matrix = np.matmul(temp, scale_matrix)
-
-        print("")
 
     @staticmethod
     def transform_out():
