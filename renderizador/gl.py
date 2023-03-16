@@ -29,7 +29,7 @@ class GL:
     height = 600  # altura da tela
     near = 0.01  # plano de corte próximo
     far = 1000  # plano de corte distante
-
+    
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
         """Definr parametros para câmera de razão de aspecto, plano próximo e distante."""
@@ -37,7 +37,13 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        GL.transformation_matrix = None
+        GL.transformation_matrix = [
+                 [1,0,0,0],
+                 [0,1,0,0],
+                 [0,0,1,0],
+                 [0,0,0,1]]
+        
+        GL.stack = []
         GL.look_at = None
 
     @staticmethod
@@ -401,6 +407,8 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         #print("Transform : ", end="")
+        GL.stack.append(GL.transformation_matrix)
+
         if translation:
             print(
                 "translation = {0} ".format(translation), end=""
@@ -427,8 +435,10 @@ class GL:
             print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
 
         temp = np.matmul(translation_matrix, GL.calc_rotation(rotation))
-
-        GL.transformation_matrix = np.matmul(temp, scale_matrix)
+        temp = np.matmul(temp, scale_matrix)
+        GL.transformation_matrix = np.matmul(GL.transformation_matrix, temp)
+        
+    
 
     @staticmethod
     def transform_out():
@@ -439,7 +449,9 @@ class GL:
         # pilha implementada.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Saindo de Transform")
+        
+        GL.transformation_matrix = GL.stack.pop()
+       
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
