@@ -211,18 +211,24 @@ class GL:
 
         def L(x0, y0, x1, y1, x, y):
             return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-
+        def is_inside(x_sample, y_sample):
+            L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
+            L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
+            L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
+            if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                return 1
+            else:
+                return 0
+        
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
-                L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x, y)
-                L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x, y)
-                L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x, y)
-                if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                    gpu.GPU.draw_pixel(
-                        [int(x), int(y)],
-                        gpu.GPU.RGB8,
-                        [int(e[0]), int(e[1]), int(e[2])],
-                    )
+                media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                media_dentro = media_dentro/4
+                gpu.GPU.draw_pixel(
+                    [int(x), int(y)],
+                    gpu.GPU.RGB8,
+                    [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)],
+                )
 
     @staticmethod
     def triangleSet(point, colors):
