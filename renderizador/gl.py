@@ -91,7 +91,6 @@ class GL:
             [pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0]
         )  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
-
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
@@ -103,7 +102,7 @@ class GL:
         # função pode receber mais pontos para desenhar vários segmentos. Assuma que sempre
         # vira uma quantidade par de valores.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
-        # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
+        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
         emissive_colors = colors["emissiveColor"]
         e = [0, 0, 0]
@@ -112,72 +111,10 @@ class GL:
 
         dX = lineSegments[2] - lineSegments[0]
         dY = lineSegments[3] - lineSegments[1]
-<<<<<<< HEAD
         if dX == 0 or dY == 0:
             s = 0
         else:
             s = dY / dX
-=======
-        if(dX == 0 or dY == 0):
-            s = 0
-        else:
-            s = dY / dX
-
-        if(s < 1 and s > 0): 
-            v = lineSegments[1]
-            begin = int(lineSegments[0])
-            end = int(lineSegments[2])
-            step = 1
-
-            for x in range(begin, end, step):
-                gpu.GPU.set_pixel(
-                    int(x),
-                    int(round(v)),
-                    int(e[0]),
-                    int(e[1]),
-                    int(e[2]),
-                )
-                v += s
-
-        elif(s > 1):
-            s = dX / dY
-            if(dX < 0):
-                v = lineSegments[2]
-                begin = int(lineSegments[3])
-                end = int(lineSegments[1])
-            else:
-                v = lineSegments[0]
-                begin = int(lineSegments[1])
-                end = int(lineSegments[3])
-            for y in range(begin, end):
-
-                gpu.GPU.set_pixel(
-                    int(round(v)),
-                    int(y),
-                    int(e[0]),
-                    int(e[1]),
-                    int(e[2]),
-                )
-
-                v += s
-        elif(s < -1):
-            s = (dX / dY)
-            v = lineSegments[2]
-            for y in range(int(lineSegments[3]), int(lineSegments[1])):
-
-                gpu.GPU.set_pixel(
-                    int(round(v)),
-                    int(y),
-                    int(e[0]),
-                    int(e[1]),
-                    int(e[2]),
-                )
-                v += s
-        elif(s < 0 and s > -1):
-            v = lineSegments[1]
-
-            for x in range(int(lineSegments[2]), int(lineSegments[0])):
->>>>>>> 8bbb2ed (Proj 1.1 feito)
 
         if s < 1 and s > 0:
             v = lineSegments[1]
@@ -232,7 +169,6 @@ class GL:
                 )
                 v += s
         else:
-<<<<<<< HEAD
             if dX == 0:
                 v = lineSegments[0]
                 for y in range(int(lineSegments[1]), int(lineSegments[3])):
@@ -240,38 +176,17 @@ class GL:
                         [int(round(v)), int(y)],
                         gpu.GPU.RGB8,
                         [int(e[0]), int(e[1]), int(e[2])],
-=======
-            if(dX == 0):
-                v = lineSegments[0]
-                for y in range(int(lineSegments[1]), int(lineSegments[3])):
-                    gpu.GPU.set_pixel(
-                        int(round(v)),
-                        int(y),
-                        int(e[0]),
-                        int(e[1]),
-                        int(e[2]),
->>>>>>> 8bbb2ed (Proj 1.1 feito)
                     )
             else:
                 v = lineSegments[1]
                 for x in range(int(lineSegments[0]), int(lineSegments[2])):
-<<<<<<< HEAD
                     gpu.GPU.draw_pixel(
                         [int(x), int(round(v))],
                         gpu.GPU.RGB8,
                         [int(e[0]), int(e[1]), int(e[2])],
                     )
-=======
-                    gpu.GPU.set_pixel(
-                        int(x),
-                        int(round(v)),
-                        int(e[0]),
-                        int(e[1]),
-                        int(e[2]),
-                    )
 
 
->>>>>>> 8bbb2ed (Proj 1.1 feito)
 
     @staticmethod
     def triangleSet2D(vertices, colors):
@@ -282,26 +197,12 @@ class GL:
         # Já point[2] é a coordenada x do segundo ponto e assim por diante. Assuma que a
         # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
-<<<<<<< HEAD
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-<<<<<<< HEAD
-=======
-        print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
->>>>>>> 8bbb2ed (Proj 1.1 feito)
-        
+        #print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
         emissive_colors = colors["emissiveColor"]
         e = [0, 0, 0]
         for i in range(0, len(emissive_colors)):
-<<<<<<< HEAD
-            e[i] = int(emissive_colors[i]* 255)
-=======
-            e[i] = int(emissive_colors[i]) * 255
->>>>>>> 8bbb2ed (Proj 1.1 feito)
-=======
-        # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
->>>>>>> ebd2b833bc929db7a5fb0e4d99366e77c964b187
+            e[i] = int(emissive_colors[i] * 255)
 
         minX = int(min([vertices[0], vertices[2], vertices[4]]))
         maxX = int(max([vertices[0], vertices[2], vertices[4]]))
@@ -309,36 +210,19 @@ class GL:
         maxY = int(max([vertices[1], vertices[3], vertices[5]]))
 
         def L(x0, y0, x1, y1, x, y):
-<<<<<<< HEAD
             return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-=======
-            return ((y1 - y0)*x - (x1 - x0)*y + y0*(x1 - x0) - x0*(y1 - y0))
->>>>>>> 8bbb2ed (Proj 1.1 feito)
 
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
                 L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x, y)
                 L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x, y)
                 L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x, y)
-<<<<<<< HEAD
                 if L1 >= 0 and L2 >= 0 and L3 >= 0:
                     gpu.GPU.draw_pixel(
                         [int(x), int(y)],
                         gpu.GPU.RGB8,
                         [int(e[0]), int(e[1]), int(e[2])],
                     )
-=======
-                if(L1 >= 0 and L2 >= 0 and L3 >= 0):
-                    gpu.GPU.set_pixel(
-                        int(x),
-                        int(y),
-                        int(e[0]),
-                        int(e[1]),
-                        int(e[2]),
-                    )
-
-
->>>>>>> 8bbb2ed (Proj 1.1 feito)
 
     @staticmethod
     def triangleSet(point, colors):
