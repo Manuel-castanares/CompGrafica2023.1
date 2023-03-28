@@ -42,7 +42,8 @@ class GL:
                  [0,1,0,0],
                  [0,0,1,0],
                  [0,0,0,1]]
-        
+        GL.zbuffer = np.ones((height, width))
+        GL.anti_aliasing = True
         GL.stack = []
         GL.look_at = None
 
@@ -222,13 +223,22 @@ class GL:
         
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
-                media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
-                media_dentro = media_dentro/4
-                gpu.GPU.draw_pixel(
-                    [int(x), int(y)],
-                    gpu.GPU.RGB8,
-                    [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)],
-                )
+                if GL.anti_aliasing:
+                    media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                    media_dentro = media_dentro/4
+                    if(media_dentro > 0):
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
+                        )
+                else:
+                    if is_inside(x, y):
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(e[0]), int(e[1]), int(e[2])], #With Supersampling
+                        )
 
     @staticmethod
     def triangleSet(point, colors):
