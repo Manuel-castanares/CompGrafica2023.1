@@ -43,9 +43,10 @@ class GL:
                  [0,0,1,0],
                  [0,0,0,1]]
         GL.zbuffer = np.ones((height, width))
-        GL.anti_aliasing = True
+        GL.anti_aliasing = False
         GL.stack = []
         GL.look_at = None
+        GL.color_per_vertex = False
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -200,45 +201,95 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
         #print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
-        emissive_colors = colors["emissiveColor"]
-        e = [0, 0, 0]
-        for i in range(0, len(emissive_colors)):
-            e[i] = int(emissive_colors[i] * 255)
+        if GL.color_per_vertex:
+            minX = int(min([vertices[0], vertices[2], vertices[4]]))
+            maxX = int(max([vertices[0], vertices[2], vertices[4]]))
+            minY = int(min([vertices[1], vertices[3], vertices[5]]))
+            maxY = int(max([vertices[1], vertices[3], vertices[5]]))
 
-        minX = int(min([vertices[0], vertices[2], vertices[4]]))
-        maxX = int(max([vertices[0], vertices[2], vertices[4]]))
-        minY = int(min([vertices[1], vertices[3], vertices[5]]))
-        maxY = int(max([vertices[1], vertices[3], vertices[5]]))
-
-        def L(x0, y0, x1, y1, x, y):
-            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-        def is_inside(x_sample, y_sample):
-            L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
-            L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
-            L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
-            if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                return 1
-            else:
-                return 0
-        
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                if GL.anti_aliasing:
-                    media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
-                    media_dentro = media_dentro/4
-                    if(media_dentro > 0):
-                        gpu.GPU.draw_pixel(
-                            [int(x), int(y)],
-                            gpu.GPU.RGB8,
-                            [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
-                        )
+            def L(x0, y0, x1, y1, x, y):
+                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+            def is_inside(x_sample, y_sample):
+                L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
+                L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
+                L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
+                if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                    return 1
                 else:
-                    if is_inside(x, y):
-                        gpu.GPU.draw_pixel(
-                            [int(x), int(y)],
-                            gpu.GPU.RGB8,
-                            [int(e[0]), int(e[1]), int(e[2])], #With Supersampling
-                        )
+                    return 0
+                
+            def calc_area_triangulo (vertice1, vertice2, vertice3, ponto):
+                pv1 = [vertice1[0] - ponto[0], vertice1[1] - ponto[1]]
+                pv2 = [vertice2[0] - ponto[0], vertice2[1] - ponto[1]]
+                pv3 = [vertice3[0] - ponto[0], vertice3[1] - ponto[1]]
+                va = np.linalg.norm(np.cross(pv2, pv3))/2
+                vb = np.linalg.norm(np.cross(pv1, pv3))/2
+                vc = np.linalg.norm(np.cross(pv1, pv2))/2
+
+                area = va + vb + vc
+
+                return va/area, vb/area, vc/area
+            
+
+            for x in range(minX, maxX + 1):
+                for y in range(minY, maxY + 1):
+                    if GL.anti_aliasing:
+                        media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                        media_dentro = media_dentro/4
+                        if(media_dentro > 0):
+                            gpu.GPU.draw_pixel(
+                                [int(x), int(y)],
+                                gpu.GPU.RGB8,
+                                [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
+                            )
+                    else:
+                        if is_inside(x, y):
+                            va, vb, vc = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
+                            gpu.GPU.draw_pixel(
+                                [int(x), int(y)],
+                                gpu.GPU.RGB8,
+                                [int(e[0]*va), int(e[1]*vb), int(e[2]*vc)], #With Supersampling
+                            )
+        else:
+            emissive_colors = colors["emissiveColor"]
+            e = [0, 0, 0]
+            for i in range(0, len(emissive_colors)):
+                e[i] = int(emissive_colors[i] * 255)
+
+            minX = int(min([vertices[0], vertices[2], vertices[4]]))
+            maxX = int(max([vertices[0], vertices[2], vertices[4]]))
+            minY = int(min([vertices[1], vertices[3], vertices[5]]))
+            maxY = int(max([vertices[1], vertices[3], vertices[5]]))
+
+            def L(x0, y0, x1, y1, x, y):
+                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+            def is_inside(x_sample, y_sample):
+                L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
+                L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
+                L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
+                if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                    return 1
+                else:
+                    return 0
+            
+            for x in range(minX, maxX + 1):
+                for y in range(minY, maxY + 1):
+                    if GL.anti_aliasing:
+                        media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                        media_dentro = media_dentro/4
+                        if(media_dentro > 0):
+                            gpu.GPU.draw_pixel(
+                                [int(x), int(y)],
+                                gpu.GPU.RGB8,
+                                [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
+                            )
+                    else:
+                        if is_inside(x, y):
+                            gpu.GPU.draw_pixel(
+                                [int(x), int(y)],
+                                gpu.GPU.RGB8,
+                                [int(e[0]), int(e[1]), int(e[2])], #With Supersampling
+                            )
 
     @staticmethod
     def triangleSet(point, colors):
@@ -550,65 +601,39 @@ class GL:
         colors,
         current_texture,
     ):
-        """Função usada para renderizar IndexedFaceSet."""
-        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
-        # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
-        # Você receberá as coordenadas dos pontos no parâmetro cord, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim coord[0] é o valor
-        # da coordenada x do primeiro ponto, coord[1] o valor y do primeiro ponto, coord[2]
-        # o valor z da coordenada z do primeiro ponto. Já coord[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedFaceSet uma lista de vértices é informada
-        # em coordIndex, o valor -1 indica que a lista acabou.
-        # A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante.
-        # Adicionalmente essa implementação do IndexedFace aceita cores por vértices, assim
-        # se a flag colorPerVertex estiver habilitada, os vértices também possuirão cores
-        # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
-        # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
-        # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
-        # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
-        # implementadado um método para a leitura de imagens.
+        if(not color):
+            pontos ={}
+            for i in range(int(len(coord)/3)):
+                pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
+            print(len(coord))
+            idex = []
+            for i in coordIndex:
+                if(i >= 0):
+                    idex.append(i)
+                else:
+                    drawPoints = []
+                    for e in idex:
+                        drawPoints += pontos[e]
 
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        # print("IndexedFaceSet : ")
-        # if coord:
-        #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        # print("colorPerVertex = {0}".format(colorPerVertex))
-        # if colorPerVertex and color and colorIndex:
-        #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        # if texCoord and texCoordIndex:
-        #     print(
-        #         "\tpontos(u, v) = {0}, texCoordIndex = {1}".format(
-        #             texCoord, texCoordIndex
-        #         )
-        #     )
-        # if current_texture:
-        #     image = gpu.GPU.load_texture(current_texture[0])
-        #     print("\t Matriz com image = {0}".format(image))
-        #     print("\t Dimensões da image = {0}".format(image.shape))
-        # print(
-        #     "IndexedFaceSet : colors = {0}".format(colors)
-        # )  # imprime no terminal as cores
+                    GL.triangleStripSet(drawPoints, [int(len(idex)/3)], colors)
+                    idex = []
+        else:
+            GL.color_per_vertex = True
+            pontos ={}
+            for i in range(int(len(coord)/3)):
+                pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
+            print(len(coord))
+            idex = []
+            for i in coordIndex:
+                if(i >= 0):
+                    idex.append(i)
+                else:
+                    drawPoints = []
+                    for e in idex:
+                        drawPoints += pontos[e]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        #gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-        pontos ={}
-        for i in range(int(len(coord)/3)):
-            pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
-        print(len(coord))
-        idex = []
-        for i in coordIndex:
-            if(i >= 0):
-                idex.append(i)
-            else:
-                drawPoints = []
-                for e in idex:
-                    drawPoints += pontos[e]
-
-                GL.triangleStripSet(drawPoints, [int(len(idex)/3)], colors)
-                idex = []
-
+                    GL.triangleStripSet(drawPoints, [int(len(idex)/3)], color)
+                    idex = []
 
 
     @staticmethod
