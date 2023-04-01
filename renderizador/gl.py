@@ -227,8 +227,20 @@ class GL:
                 vc = np.linalg.norm(np.cross(pv1, pv2))/2
 
                 area = va + vb + vc
+                areaVa = va/area
+                areaVb = vb/area
+                areaVc = vc/area
 
-                return va/area, vb/area, vc/area
+                red = (va*colors[0] + vb*colors[3] + vc*colors[6]) / area
+                red = ( red - 0 ) * (255 - 0) / ( 1 - 0 )
+
+                green = (va*colors[1] + vb*colors[4] + vc*colors[7]) / area
+                green = ( green - 0 ) * (255 - 0) / ( 1 - 0 )
+
+                blue = (va*colors[2] + vb*colors[5] + vc*colors[8]) / area
+                blue = ( blue - 0 ) * (255 - 0) / ( 1 - 0 )
+
+                return red, green, blue
             
 
             for x in range(minX, maxX + 1):
@@ -244,11 +256,11 @@ class GL:
                             )
                     else:
                         if is_inside(x, y):
-                            va, vb, vc = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
+                            r, g, b = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(e[0]*va), int(e[1]*vb), int(e[2]*vc)], #With Supersampling
+                                [int(r), int(g), int(b)], #With Supersampling
                             )
         else:
             emissive_colors = colors["emissiveColor"]
@@ -605,7 +617,6 @@ class GL:
             pontos ={}
             for i in range(int(len(coord)/3)):
                 pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
-            print(len(coord))
             idex = []
             for i in coordIndex:
                 if(i >= 0):
@@ -620,19 +631,22 @@ class GL:
         else:
             GL.color_per_vertex = True
             pontos ={}
+            cores = {}
             for i in range(int(len(coord)/3)):
                 pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
-            print(len(coord))
+                cores[i] = [color[i*3], color[(i*3)+1], color[(i*3)+2]]
             idex = []
             for i in coordIndex:
                 if(i >= 0):
                     idex.append(i)
                 else:
                     drawPoints = []
+                    drawColors = []
                     for e in idex:
                         drawPoints += pontos[e]
+                        drawColors += cores[e]
 
-                    GL.triangleStripSet(drawPoints, [int(len(idex)/3)], color)
+                    GL.triangleStripSet(drawPoints, [int(len(idex)/3)], drawColors)
                     idex = []
 
 
