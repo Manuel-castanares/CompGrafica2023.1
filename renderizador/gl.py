@@ -94,6 +94,7 @@ class GL:
             [pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0]
         )  # altera pixel (u, v, tipo, r, g, b)
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+    
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
@@ -188,99 +189,97 @@ class GL:
                         gpu.GPU.RGB8,
                         [int(e[0]), int(e[1]), int(e[2])],
                     )
+    
+    @staticmethod
+    def triangleSet2DColorPerVertex(vertices_x_y, colors):
+        minX = int(min([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+        maxX = int(max([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+        minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
+        maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
 
+        def L(x0, y0, x1, y1, x, y):
+            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+        def is_inside(x_sample, y_sample):
+            L1 = L(vertices_x_y[0], vertices_x_y[1], vertices_x_y[2], vertices_x_y[3], x_sample, y_sample)
+            L2 = L(vertices_x_y[2], vertices_x_y[3], vertices_x_y[4], vertices_x_y[5], x_sample, y_sample)
+            L3 = L(vertices_x_y[4], vertices_x_y[5], vertices_x_y[0], vertices_x_y[1], x_sample, y_sample)
+            if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                return 1
+            else:
+                return 0
+            
+        def calc_area_triangulo (vertice1, vertice2, vertice3, ponto):
+            pv1 = [vertice1[0] - ponto[0], vertice1[1] - ponto[1]]
+            pv2 = [vertice2[0] - ponto[0], vertice2[1] - ponto[1]]
+            pv3 = [vertice3[0] - ponto[0], vertice3[1] - ponto[1]]
+            va = np.linalg.norm(np.cross(pv2, pv3))/2
+            vb = np.linalg.norm(np.cross(pv1, pv3))/2
+            vc = np.linalg.norm(np.cross(pv1, pv2))/2
 
+            area = va + vb + vc
+
+            red = (va*colors[0] + vb*colors[3] + vc*colors[6]) / area
+            red = ( red - 0 ) * (255 - 0) / ( 1 - 0 )
+
+            green = (va*colors[1] + vb*colors[4] + vc*colors[7]) / area
+            green = ( green - 0 ) * (255 - 0) / ( 1 - 0 )
+
+            blue = (va*colors[2] + vb*colors[5] + vc*colors[8]) / area
+            blue = ( blue - 0 ) * (255 - 0) / ( 1 - 0 )
+
+            return red, green, blue
+        
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                if GL.anti_aliasing:
+                    media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                    media_dentro = media_dentro/4
+                    if(media_dentro > 0):
+                        r, g, b = calc_area_triangulo([vertices_x_y[0], vertices_x_y[1]], [vertices_x_y[2], vertices_x_y[3]], [vertices_x_y[4], vertices_x_y[5]], [x,y])
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(r*media_dentro * (1 - GL.transp)), int(g*media_dentro  * (1 - GL.transp)), int(b*media_dentro  * (1 - GL.transp))], #With Supersampling
+                        )
+                else:
+                    if is_inside(x, y):
+                        r, g, b = calc_area_triangulo([vertices_x_y[0], vertices_x_y[1]], [vertices_x_y[2], vertices_x_y[3]], [vertices_x_y[4], vertices_x_y[5]], [x,y])
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(r  * (1 - GL.transp)), int(g  * (1 - GL.transp)), int(b  * (1 - GL.transp))], #With Supersampling
+                        )
 
     @staticmethod
     def triangleSet2D(vertices, colors):
-        """Função usada para renderizar TriangleSet2D."""
-        # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
-        # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
-        # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
-        # Já point[2] é a coordenada x do segundo ponto e assim por diante. Assuma que a
-        # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
-        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-        #print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
+        hasZ = False
+        if len(vertices) > 6:
+            vertices_x_y = [vertices[0], vertices[1], vertices[3], vertices[4], vertices[6], vertices[7]]
+            print(vertices)
+            hasZ = True
+        else:
+            vertices_x_y = [vertices[0], vertices[1], vertices[2], vertices[3], vertices[4], vertices[5]]
+        
         if GL.color_per_vertex:
-            minX = int(min([vertices[0], vertices[2], vertices[4]]))
-            maxX = int(max([vertices[0], vertices[2], vertices[4]]))
-            minY = int(min([vertices[1], vertices[3], vertices[5]]))
-            maxY = int(max([vertices[1], vertices[3], vertices[5]]))
-
-            def L(x0, y0, x1, y1, x, y):
-                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-            def is_inside(x_sample, y_sample):
-                L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
-                L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
-                L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
-                if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                    return 1
-                else:
-                    return 0
-                
-            def calc_area_triangulo (vertice1, vertice2, vertice3, ponto):
-                pv1 = [vertice1[0] - ponto[0], vertice1[1] - ponto[1]]
-                pv2 = [vertice2[0] - ponto[0], vertice2[1] - ponto[1]]
-                pv3 = [vertice3[0] - ponto[0], vertice3[1] - ponto[1]]
-                va = np.linalg.norm(np.cross(pv2, pv3))/2
-                vb = np.linalg.norm(np.cross(pv1, pv3))/2
-                vc = np.linalg.norm(np.cross(pv1, pv2))/2
-
-                area = va + vb + vc
-                areaVa = va/area
-                areaVb = vb/area
-                areaVc = vc/area
-
-                red = (va*colors[0] + vb*colors[3] + vc*colors[6]) / area
-                red = ( red - 0 ) * (255 - 0) / ( 1 - 0 )
-
-                green = (va*colors[1] + vb*colors[4] + vc*colors[7]) / area
-                green = ( green - 0 ) * (255 - 0) / ( 1 - 0 )
-
-                blue = (va*colors[2] + vb*colors[5] + vc*colors[8]) / area
-                blue = ( blue - 0 ) * (255 - 0) / ( 1 - 0 )
-
-                return red, green, blue
-            
-
-            for x in range(minX, maxX + 1):
-                for y in range(minY, maxY + 1):
-                    if GL.anti_aliasing:
-                        media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
-                        media_dentro = media_dentro/4
-                        if(media_dentro > 0):
-                            r, g, b = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
-                            gpu.GPU.draw_pixel(
-                                [int(x), int(y)],
-                                gpu.GPU.RGB8,
-                                [int(r*media_dentro * (1 - GL.transp)), int(g*media_dentro  * (1 - GL.transp)), int(b*media_dentro  * (1 - GL.transp))], #With Supersampling
-                            )
-                    else:
-                        if is_inside(x, y):
-                            r, g, b = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
-                            gpu.GPU.draw_pixel(
-                                [int(x), int(y)],
-                                gpu.GPU.RGB8,
-                                [int(r  * (1 - GL.transp)), int(g  * (1 - GL.transp)), int(b  * (1 - GL.transp))], #With Supersampling
-                            )
+            GL.triangleSet2DColorPerVertex(vertices_x_y, colors)
         else:
             emissive_colors = colors["emissiveColor"]
             e = [0, 0, 0]
             for i in range(0, len(emissive_colors)):
                 e[i] = int(emissive_colors[i] * 255)
 
-            minX = int(min([vertices[0], vertices[2], vertices[4]]))
-            maxX = int(max([vertices[0], vertices[2], vertices[4]]))
-            minY = int(min([vertices[1], vertices[3], vertices[5]]))
-            maxY = int(max([vertices[1], vertices[3], vertices[5]]))
+            minX = int(min([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+            maxX = int(max([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+            minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
+            maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
 
             def L(x0, y0, x1, y1, x, y):
                 return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
             def is_inside(x_sample, y_sample):
-                L1 = L(vertices[0], vertices[1], vertices[2], vertices[3], x_sample, y_sample)
-                L2 = L(vertices[2], vertices[3], vertices[4], vertices[5], x_sample, y_sample)
-                L3 = L(vertices[4], vertices[5], vertices[0], vertices[1], x_sample, y_sample)
+                L1 = L(vertices_x_y[0], vertices_x_y[1], vertices_x_y[2], vertices_x_y[3], x_sample, y_sample)
+                L2 = L(vertices_x_y[2], vertices_x_y[3], vertices_x_y[4], vertices_x_y[5], x_sample, y_sample)
+                L3 = L(vertices_x_y[4], vertices_x_y[5], vertices_x_y[0], vertices_x_y[1], x_sample, y_sample)
                 if L1 >= 0 and L2 >= 0 and L3 >= 0:
                     return 1
                 else:
@@ -292,23 +291,27 @@ class GL:
                         media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
                         media_dentro = media_dentro/4
 
-                        newColor = [e[0]*media_dentro  * (1 - GL.transp), e[1]*media_dentro  * (1 - GL.transp), e[2]*media_dentro  * (1 - GL.transp)]
-                        oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
                         if(media_dentro > 0):
+                            newColor = [e[0]*media_dentro * (1 - GL.transp), e[1]*media_dentro * (1 - GL.transp), e[2]*media_dentro * (1 - GL.transp)]
+                            oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+
+                            if GL.transp > 0:
+                                newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(newColor[0] + oldColor[0]), int(newColor[1] + oldColor[1]), int(newColor[2] + oldColor[2])], #With Supersampling
+                                [int(newColor[0]), int(newColor[1]), int(newColor[2])],
                             )
                     else:
-                        if is_inside(x, y):
-                            
+                        if is_inside(x, y):                    
                             newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+                            if GL.transp > 0:
+                                newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(newColor[0] + oldColor[0]), int(newColor[1] + oldColor[1]), int(newColor[2] + oldColor[2])], #With Supersampling
+                                [int(newColor[0]), int(newColor[1]), int(newColor[2])],
                             )
 
     @staticmethod
@@ -328,6 +331,7 @@ class GL:
         # tipos de cores.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+       
         try:
             if colors["transparency"]:
                 GL.transp = colors["transparency"]
@@ -360,10 +364,13 @@ class GL:
             points = [
                 int(p1[0][0]),
                 int(p1[1][0]),
+                int(p1[2][0]),
                 int(p2[0][0]),
                 int(p2[1][0]),
+                int(p2[2][0]),
                 int(p3[0][0]),
                 int(p3[1][0]),
+                int(p3[2][0]),
             ]
             GL.triangleSet2D(points, colors)
 
