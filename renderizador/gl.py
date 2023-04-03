@@ -43,10 +43,11 @@ class GL:
                  [0,0,1,0],
                  [0,0,0,1]]
         GL.zbuffer = np.ones((height, width))
-        GL.anti_aliasing = False
+        GL.anti_aliasing = True
         GL.stack = []
         GL.look_at = None
         GL.color_per_vertex = False
+        GL.transp = 0
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -249,10 +250,11 @@ class GL:
                         media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
                         media_dentro = media_dentro/4
                         if(media_dentro > 0):
+                            r, g, b = calc_area_triangulo([vertices[0], vertices[1]], [vertices[2], vertices[3]], [vertices[4], vertices[5]], [x,y])
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
+                                [int(r*media_dentro * (1 - GL.transp)), int(g*media_dentro  * (1 - GL.transp)), int(b*media_dentro  * (1 - GL.transp))], #With Supersampling
                             )
                     else:
                         if is_inside(x, y):
@@ -260,7 +262,7 @@ class GL:
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(r), int(g), int(b)], #With Supersampling
+                                [int(r  * (1 - GL.transp)), int(g  * (1 - GL.transp)), int(b  * (1 - GL.transp))], #With Supersampling
                             )
         else:
             emissive_colors = colors["emissiveColor"]
@@ -289,18 +291,24 @@ class GL:
                     if GL.anti_aliasing:
                         media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
                         media_dentro = media_dentro/4
+
+                        newColor = [e[0]*media_dentro  * (1 - GL.transp), e[1]*media_dentro  * (1 - GL.transp), e[2]*media_dentro  * (1 - GL.transp)]
+                        oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
                         if(media_dentro > 0):
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(e[0]*media_dentro), int(e[1]*media_dentro), int(e[2]*media_dentro)], #With Supersampling
+                                [int(newColor[0] + oldColor[0]), int(newColor[1] + oldColor[1]), int(newColor[2] + oldColor[2])], #With Supersampling
                             )
                     else:
                         if is_inside(x, y):
+                            
+                            newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
+                            oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
                             gpu.GPU.draw_pixel(
                                 [int(x), int(y)],
                                 gpu.GPU.RGB8,
-                                [int(e[0]), int(e[1]), int(e[2])], #With Supersampling
+                                [int(newColor[0] + oldColor[0]), int(newColor[1] + oldColor[1]), int(newColor[2] + oldColor[2])], #With Supersampling
                             )
 
     @staticmethod
@@ -320,6 +328,12 @@ class GL:
         # tipos de cores.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        try:
+            if colors["transparency"]:
+                GL.transp = colors["transparency"]
+        except:
+            pass
+
         n_triangle = int(len(point) / 9)
 
         final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
