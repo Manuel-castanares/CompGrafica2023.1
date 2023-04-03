@@ -43,7 +43,7 @@ class GL:
                  [0,0,1,0],
                  [0,0,0,1]]
         GL.zbuffer = np.ones((height, width))
-        GL.anti_aliasing = True
+        GL.anti_aliasing = False
         GL.stack = []
         GL.look_at = None
         GL.color_per_vertex = False
@@ -294,7 +294,7 @@ class GL:
                         if(media_dentro > 0):
                             newColor = [e[0]*media_dentro * (1 - GL.transp), e[1]*media_dentro * (1 - GL.transp), e[2]*media_dentro * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
-                            if(newColor[0] != oldColor[0] or newColor[1] != oldColor[1] or newColor[2] != oldColor[2]):
+                            if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
                                 if GL.transp > 0:
                                     newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
                                 gpu.GPU.draw_pixel(
@@ -306,7 +306,7 @@ class GL:
                         if is_inside(x, y):                    
                             newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
-                            if(newColor[0] != oldColor[0] or newColor[1] != oldColor[1] or newColor[2] != oldColor[2]):
+                            if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
                                 if GL.transp > 0:
                                     newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
                              
