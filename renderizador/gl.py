@@ -294,44 +294,30 @@ class GL:
                         if(media_dentro > 0):
                             newColor = [e[0]*media_dentro * (1 - GL.transp), e[1]*media_dentro * (1 - GL.transp), e[2]*media_dentro * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
-
-                            if GL.transp > 0:
-                                newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
-                            gpu.GPU.draw_pixel(
-                                [int(x), int(y)],
-                                gpu.GPU.RGB8,
-                                [int(newColor[0]), int(newColor[1]), int(newColor[2])],
-                            )
+                            if(newColor[0] != oldColor[0] or newColor[1] != oldColor[1] or newColor[2] != oldColor[2]):
+                                if GL.transp > 0:
+                                    newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
+                                gpu.GPU.draw_pixel(
+                                    [int(x), int(y)],
+                                    gpu.GPU.RGB8,
+                                    [int(newColor[0]), int(newColor[1]), int(newColor[2])],
+                                )
                     else:
                         if is_inside(x, y):                    
                             newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
-                            if GL.transp > 0:
-                                newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
-                            gpu.GPU.draw_pixel(
-                                [int(x), int(y)],
-                                gpu.GPU.RGB8,
-                                [int(newColor[0]), int(newColor[1]), int(newColor[2])],
-                            )
+                            if(newColor[0] != oldColor[0] or newColor[1] != oldColor[1] or newColor[2] != oldColor[2]):
+                                if GL.transp > 0:
+                                    newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
+                             
+                                gpu.GPU.draw_pixel(
+                                    [int(x), int(y)],
+                                    gpu.GPU.RGB8,
+                                    [int(newColor[0]), int(newColor[1]), int(newColor[2])],
+                                )
 
     @staticmethod
     def triangleSet(point, colors):
-        """Função usada para renderizar TriangleSet."""
-        # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
-        # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
-        # primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e
-        # assim por diante.
-        # No TriangleSet os triângulos são informados individualmente, assim os três
-        # primeiros pontos definem um triângulo, os três próximos pontos definem um novo
-        # triângulo, e assim por diante.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, você pode assumir
-        # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
-        # (emissiveColor), conforme implementar novos materias você deverá suportar outros
-        # tipos de cores.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-       
         try:
             if colors["transparency"]:
                 GL.transp = colors["transparency"]
