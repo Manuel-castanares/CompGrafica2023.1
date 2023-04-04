@@ -42,12 +42,13 @@ class GL:
                  [0,1,0,0],
                  [0,0,1,0],
                  [0,0,0,1]]
-        GL.zbuffer = np.ones((height, width))
+        GL.zbuffer = np.array(np.ones((height, width)) * np.inf)
         GL.anti_aliasing = False
         GL.stack = []
         GL.look_at = None
         GL.color_per_vertex = False
         GL.transp = 0
+        GL.P_mat = None
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -251,12 +252,41 @@ class GL:
                             [int(r  * (1 - GL.transp)), int(g  * (1 - GL.transp)), int(b  * (1 - GL.transp))], #With Supersampling
                         )
 
+    
+    @staticmethod
+    def check_is_inside_tri(x_sample, y_sample, vertices_x_y):
+        def L(x0, y0, x1, y1, x, y):
+            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+
+        L1 = L(vertices_x_y[0], vertices_x_y[1], vertices_x_y[2], vertices_x_y[3], x_sample, y_sample)
+        L2 = L(vertices_x_y[2], vertices_x_y[3], vertices_x_y[4], vertices_x_y[5], x_sample, y_sample)
+        L3 = L(vertices_x_y[4], vertices_x_y[5], vertices_x_y[0], vertices_x_y[1], x_sample, y_sample)
+        if L1 >= 0 and L2 >= 0 and L3 >= 0:
+            return 1
+        else:
+            return 0
+
+    @ staticmethod
+    def draw_with_anti_aliasing(x, y, vertices_x_y, e):
+        media_dentro = GL.check_is_inside_tri(x - 0.25 , y - 0.25, vertices_x_y) + GL.check_is_inside_tri(x + 0.25 , y + 0.25, vertices_x_y) + GL.check_is_inside_tri(x - 0.25 , y + 0.25, vertices_x_y) + GL.check_is_inside_tri(x + 0.25 , y - 0.25, vertices_x_y)
+        media_dentro = media_dentro/4
+        if(media_dentro > 0):
+            newColor = [e[0]*media_dentro * (1 - GL.transp), e[1]*media_dentro * (1 - GL.transp), e[2]*media_dentro * (1 - GL.transp)]
+            oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+            if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
+                if GL.transp > 0:
+                    newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
+                gpu.GPU.draw_pixel(
+                    [int(x), int(y)],
+                    gpu.GPU.RGB8,
+                    [int(newColor[0]), int(newColor[1]), int(newColor[2])],
+                )
+
     @staticmethod
     def triangleSet2D(vertices, colors):
         hasZ = False
         if len(vertices) > 6:
             vertices_x_y = [vertices[0], vertices[1], vertices[3], vertices[4], vertices[6], vertices[7]]
-            print(vertices)
             hasZ = True
         else:
             vertices_x_y = [vertices[0], vertices[1], vertices[2], vertices[3], vertices[4], vertices[5]]
@@ -274,47 +304,75 @@ class GL:
             minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
             maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
 
-            def L(x0, y0, x1, y1, x, y):
-                return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
-            def is_inside(x_sample, y_sample):
-                L1 = L(vertices_x_y[0], vertices_x_y[1], vertices_x_y[2], vertices_x_y[3], x_sample, y_sample)
-                L2 = L(vertices_x_y[2], vertices_x_y[3], vertices_x_y[4], vertices_x_y[5], x_sample, y_sample)
-                L3 = L(vertices_x_y[4], vertices_x_y[5], vertices_x_y[0], vertices_x_y[1], x_sample, y_sample)
-                if L1 >= 0 and L2 >= 0 and L3 >= 0:
-                    return 1
-                else:
-                    return 0
-            
-            for x in range(minX, maxX + 1):
-                for y in range(minY, maxY + 1):
-                    if GL.anti_aliasing:
-                        media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
-                        media_dentro = media_dentro/4
+            if hasZ:
+                GL.draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertices, e)
+            else:
+                GL.draw_if_not_z(minX, maxX, minY, maxY, vertices_x_y, e)
+           
+    @staticmethod
+    def find_z(v1, v2, v3, x, y):
+        
+        vec1 = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]]
+        vec2 = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]]
 
-                        if(media_dentro > 0):
-                            newColor = [e[0]*media_dentro * (1 - GL.transp), e[1]*media_dentro * (1 - GL.transp), e[2]*media_dentro * (1 - GL.transp)]
-                            oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
-                            if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
-                                if GL.transp > 0:
-                                    newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
-                                gpu.GPU.draw_pixel(
-                                    [int(x), int(y)],
-                                    gpu.GPU.RGB8,
-                                    [int(newColor[0]), int(newColor[1]), int(newColor[2])],
-                                )
+        cross_product = np.cross(vec2, vec1)
+        d = -(cross_product[0]*v1[0] + cross_product[1]*v1[1] + cross_product[2]*v1[2])
+
+        z = (-d -cross_product[0]*x - cross_product[1]*y)/cross_product[2]
+
+        z_mat  = np.array([[0],
+                           [0],
+                           [z],
+                           [1]])
+        
+        ndc = np.matmul(GL.P_mat, z_mat)
+        ndc = ndc/ndc[3]
+        normZ = ( (ndc[2][0]) - -1 )/ ( 1 - -1 )
+        return normZ
+    
+    @staticmethod
+    def draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertecies_x_y_z, e):
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                z = GL.find_z(vertecies_x_y_z[:3], vertecies_x_y_z[3:6], vertecies_x_y_z[6:], x, y)
+                if(1):
+                    GL.zbuffer[y][x] = z
+                
+                    if GL.anti_aliasing:
+                        GL.draw_with_anti_aliasing(x, y, vertices_x_y, e)
                     else:
-                        if is_inside(x, y):                    
+                        if GL.check_is_inside_tri(x, y, vertices_x_y):       
                             newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
                             if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
                                 if GL.transp > 0:
                                     newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
-                             
+                                
                                 gpu.GPU.draw_pixel(
                                     [int(x), int(y)],
                                     gpu.GPU.RGB8,
                                     [int(newColor[0]), int(newColor[1]), int(newColor[2])],
                                 )
+
+    @staticmethod
+    def draw_if_not_z(minX, maxX, minY, maxY, vertices_x_y, e):
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                if GL.anti_aliasing:
+                   GL.draw_with_anti_aliasing(x, y, vertices_x_y, e)
+                else:
+                    if GL.check_is_inside_tri(x, y, vertices_x_y):                    
+                        newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
+                        oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+                        if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
+                            if GL.transp > 0:
+                                newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
+                            
+                            gpu.GPU.draw_pixel(
+                                [int(x), int(y)],
+                                gpu.GPU.RGB8,
+                                [int(newColor[0]), int(newColor[1]), int(newColor[2])],
+                            )
 
     @staticmethod
     def triangleSet(point, colors):
@@ -327,7 +385,7 @@ class GL:
         n_triangle = int(len(point) / 9)
 
         final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
-
+        
         for i in range(n_triangle):
             p1 = np.array(
                 [[point[0 + 9 * i]], [point[1 + 9 * i]], [point[2 + 9 * i]], [1]]
@@ -346,18 +404,19 @@ class GL:
             p1 = p1 / p1[3][0]
             p2 = p2 / p2[3][0]
             p3 = p3 / p3[3][0]
-
+            
             points = [
                 int(p1[0][0]),
                 int(p1[1][0]),
-                int(p1[2][0]),
+                p1[2][0],
                 int(p2[0][0]),
                 int(p2[1][0]),
-                int(p2[2][0]),
+                p2[2][0],
                 int(p3[0][0]),
                 int(p3[1][0]),
-                int(p3[2][0]),
+                p3[2][0],
             ]
+            
             GL.triangleSet2D(points, colors)
 
     @staticmethod
@@ -434,7 +493,7 @@ class GL:
                 [0, 0, -1, 0],
             ]
         )
-
+        GL.P_mat = P
         screen = np.array(
             [
                 [GL.width / 2, 0, 0, GL.width / 2],
@@ -517,21 +576,8 @@ class GL:
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
-        """Função usada para renderizar TriangleStripSet."""
-        # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
-        # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
-        # lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x
-        # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
-        # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
-        # em uma lista chamada stripCount (perceba que é uma lista). Ligue os vértices na ordem,
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
         pontos = [point[0], point[1], point[2], point[3], point[4], point[5], point[6], point[7], point[8]]
+        
         GL.triangleSet(pontos, colors)
 
         for i in range(3, stripCount[0]):
@@ -557,7 +603,6 @@ class GL:
                 pontos[4] = temp2[1] 
                 pontos[5] = temp2[2] 
 
-                
             GL.triangleSet(pontos, colors)
 
             pontos = temp.copy()
@@ -632,7 +677,6 @@ class GL:
                     drawPoints = []
                     for e in idex:
                         drawPoints += pontos[e]
-
                     GL.triangleStripSet(drawPoints, [int(len(idex)/3)], colors)
                     idex = []
         else:
