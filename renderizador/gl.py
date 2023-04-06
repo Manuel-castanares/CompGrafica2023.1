@@ -312,36 +312,36 @@ class GL:
     @staticmethod
     def find_z(v1, v2, v3, x, y):
         
-        vec1 = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]]
-        vec2 = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]]
+        pv1 = [v1[0] - x, v2[1] - y]
+        pv2 = [v2[0] - x, v2[1] - y]
+        pv3 = [v3[0] - x, v3[1] - y]
 
-        cross_product = np.cross(vec2, vec1)
-        d = -(cross_product[0]*v1[0] + cross_product[1]*v1[1] + cross_product[2]*v1[2])
+        va = np.linalg.norm(np.cross(pv2, pv3))/2
+        vb = np.linalg.norm(np.cross(pv1, pv3))/2
+        vc = np.linalg.norm(np.cross(pv1, pv2))/2
 
-        z = (-d -cross_product[0]*x - cross_product[1]*y)/cross_product[2]
-
-        z_mat  = np.array([[0],
-                           [0],
-                           [z],
-                           [1]])
+        area = va + vb + vc
         
-        ndc = np.matmul(GL.P_mat, z_mat)
-        ndc = ndc/ndc[3]
-        normZ = ( (ndc[2][0]) - -1 )/ ( 1 - -1 )
-        return normZ
+        z = ((va*v1[2]) + vb*v2[2] + vc*v3[2]) / area
+        z = (z+1)/2
+        
+        return z
+
     
     @staticmethod
     def draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertecies_x_y_z, e):
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
-                z = GL.find_z(vertecies_x_y_z[:3], vertecies_x_y_z[3:6], vertecies_x_y_z[6:], x, y)
-                if(1):
-                    GL.zbuffer[y][x] = z
-                
-                    if GL.anti_aliasing:
+                if GL.anti_aliasing:
+                    z = GL.find_z(vertecies_x_y_z[:3], vertecies_x_y_z[3:6], vertecies_x_y_z[6:], x, y)
+                    if(z < GL.zbuffer[y][x]):
+                        GL.zbuffer[y][x] = z 
                         GL.draw_with_anti_aliasing(x, y, vertices_x_y, e)
-                    else:
-                        if GL.check_is_inside_tri(x, y, vertices_x_y):       
+                else:
+                    if GL.check_is_inside_tri(x, y, vertices_x_y):
+                        z = GL.find_z(vertecies_x_y_z[:3], vertecies_x_y_z[3:6], vertecies_x_y_z[6:], x, y)
+                        if(z < GL.zbuffer[y][x]):
+                            GL.zbuffer[y][x] = z       
                             newColor = [e[0]  * (1 - GL.transp), e[1]  * (1 - GL.transp), e[2]  * (1 - GL.transp)]
                             oldColor = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
                             if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
