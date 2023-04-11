@@ -49,6 +49,8 @@ class GL:
         GL.color_per_vertex = False
         GL.transp = 0
         GL.P_mat = None
+        GL.is_texture = False
+        GL.cur_text = None
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -252,7 +254,68 @@ class GL:
                             [int(r  * (1 - GL.transp)), int(g  * (1 - GL.transp)), int(b  * (1 - GL.transp))], #With Supersampling
                         )
 
-    
+    @staticmethod
+    def triangleSet2DColorPerTexture(vertices_x_y, colors):
+        uv_text = colors
+        minX = int(min([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+        maxX = int(max([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
+        minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
+        maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
+
+        def L(x0, y0, x1, y1, x, y):
+            return (y1 - y0) * x - (x1 - x0) * y + y0 * (x1 - x0) - x0 * (y1 - y0)
+        def is_inside(x_sample, y_sample):
+            L1 = L(vertices_x_y[0], vertices_x_y[1], vertices_x_y[2], vertices_x_y[3], x_sample, y_sample)
+            L2 = L(vertices_x_y[2], vertices_x_y[3], vertices_x_y[4], vertices_x_y[5], x_sample, y_sample)
+            L3 = L(vertices_x_y[4], vertices_x_y[5], vertices_x_y[0], vertices_x_y[1], x_sample, y_sample)
+            if L1 >= 0 and L2 >= 0 and L3 >= 0:
+                return 1
+            else:
+                return 0
+            
+        def calc_area_triangulo (vertice1, vertice2, vertice3, ponto, uv_text):
+            pv1 = [vertice1[0] - ponto[0], vertice1[1] - ponto[1]]
+            pv2 = [vertice2[0] - ponto[0], vertice2[1] - ponto[1]]
+            pv3 = [vertice3[0] - ponto[0], vertice3[1] - ponto[1]]
+            va = np.linalg.norm(np.cross(pv2, pv3))/2
+            vb = np.linalg.norm(np.cross(pv1, pv3))/2
+            vc = np.linalg.norm(np.cross(pv1, pv2))/2
+
+            area = va + vb + vc
+            
+            u = ((va*uv_text[0] + vb*uv_text[2] + vc*uv_text[4]) / area)*(len(GL.cur_text)-1)
+            
+
+            v = -((va*uv_text[1] + vb*uv_text[3] + vc*uv_text[5]) / area)*(len(GL.cur_text[0])-1)
+
+            
+            red = GL.cur_text[int(v)][int(u)][0]
+            green = GL.cur_text[int(v)][int(u)][1]
+            blue = GL.cur_text[int(v)][int(u)][2]
+           
+            return red, green, blue
+        
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                if GL.anti_aliasing:
+                    media_dentro = is_inside(x - 0.25 , y - 0.25) + is_inside(x + 0.25 , y + 0.25) + is_inside(x - 0.25 , y + 0.25) + is_inside(x + 0.25 , y - 0.25)
+                    media_dentro = media_dentro/4
+                    if(media_dentro > 0):
+                        r, g, b = calc_area_triangulo([vertices_x_y[0], vertices_x_y[1]], [vertices_x_y[2], vertices_x_y[3]], [vertices_x_y[4], vertices_x_y[5]], [x,y], uv_text)
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(r*media_dentro), int(g*media_dentro), int(b*media_dentro)],
+                        )
+                else:
+                    if is_inside(x, y):
+                        r, g, b = calc_area_triangulo([vertices_x_y[0], vertices_x_y[1]], [vertices_x_y[2], vertices_x_y[3]], [vertices_x_y[4], vertices_x_y[5]], [x,y], uv_text)
+                        gpu.GPU.draw_pixel(
+                            [int(x), int(y)],
+                            gpu.GPU.RGB8,
+                            [int(r), int(g), int(b)],
+                        )
     @staticmethod
     def check_is_inside_tri(x_sample, y_sample, vertices_x_y):
         def L(x0, y0, x1, y1, x, y):
@@ -291,8 +354,11 @@ class GL:
         else:
             vertices_x_y = [vertices[0], vertices[1], vertices[2], vertices[3], vertices[4], vertices[5]]
         
+       
         if GL.color_per_vertex:
             GL.triangleSet2DColorPerVertex(vertices_x_y, colors)
+        elif GL.is_texture:
+            GL.triangleSet2DColorPerTexture(vertices_x_y, colors)
         else:
             emissive_colors = colors["emissiveColor"]
             e = [0, 0, 0]
@@ -303,12 +369,12 @@ class GL:
             maxX = int(max([vertices_x_y[0], vertices_x_y[2], vertices_x_y[4]]))
             minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
             maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
-
             if hasZ:
                 GL.draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertices, e)
             else:
                 GL.draw_if_not_z(minX, maxX, minY, maxY, vertices_x_y, e)
-           
+    
+
     @staticmethod
     def find_z(v1, v2, v3, x, y):
         
@@ -579,7 +645,7 @@ class GL:
         pontos = [point[0], point[1], point[2], point[3], point[4], point[5], point[6], point[7], point[8]]
         
         GL.triangleSet(pontos, colors)
-
+    
         for i in range(3, stripCount[0]):
             pontos[0] = pontos[3] 
             pontos[1] = pontos[4] 
@@ -665,7 +731,30 @@ class GL:
         colors,
         current_texture,
     ):
-        if(not color):
+        
+        if current_texture:
+            GL.is_texture = True
+            GL.cur_text = gpu.GPU.load_texture(current_texture[0])
+            pontos ={}
+            textura = {}
+            for i in range(int(len(coord)/3)):
+                pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
+            for i in range(int(len(texCoord)/2)):    
+                textura[i] = [texCoord[i*2], texCoord[(i*2)+1]]
+            idex = []
+            for i in coordIndex:
+                if(i >= 0):
+                    idex.append(i)
+                else:
+                    drawPoints = []
+                    drawText = []
+                    for e in idex:
+                        drawPoints += pontos[e]
+                        drawText += textura[e]
+
+                    GL.triangleStripSet(drawPoints, [int(len(idex)/3)], drawText)
+                    idex = []
+        elif(not color):
             pontos ={}
             for i in range(int(len(coord)/3)):
                 pontos[i] = [coord[i*3], coord[(i*3)+1], coord[(i*3)+2]]
