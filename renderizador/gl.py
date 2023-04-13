@@ -704,20 +704,32 @@ class GL:
 
     @staticmethod
     def box(size, colors):
-        """Função usada para renderizar Boxes."""
-        # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
-        # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
-        # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
-        # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
-        # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
+        newSizeX = size[0]/2
+        newSizeY = size[1]/2
+        newSizeZ = size[2]/2
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Box : size = {0}".format(size))  # imprime no terminal pontos
-        print("Box : colors = {0}".format(colors))  # imprime no terminal as cores
+        vertices = [-1*newSizeX, 1*newSizeY, -1*newSizeZ, 
+                    -1*newSizeX, 1*newSizeY, 1*newSizeZ, 
+                    1*newSizeX, 1*newSizeY, 1*newSizeZ, 
+                    1*newSizeX, 1*newSizeY, -1*newSizeZ, 
+                    -1*newSizeX, -1*newSizeY, -1*newSizeZ, 
+                    -1*newSizeX, -1*newSizeY, 1*newSizeZ, 
+                    1*newSizeX, -1*newSizeY, 1*newSizeZ, 
+                    1*newSizeX, -1*newSizeY, -1*newSizeZ]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        
+        triangles = [[0, 1, 3, -1, 1, 2, 3, -1],
+                     [0, 4, 1, -1, 4, 5, 1, -1],
+                     [1, 5, 2, -1, 5, 6, 2, -1],
+                     [2, 6, 3, -1, 6, 7, 3, -1],
+                     [3, 7, 0, -1, 7, 4, 0, -1],
+                     [4, 7, 5, -1, 7, 6, 5, -1]]
+    
+
+        
+        
+        for i in range(len(triangles)):
+            GL.indexedFaceSet(coord=vertices, coordIndex=triangles[i], colors=colors, colorPerVertex=False, color=None, colorIndex=None, texCoord=None, texCoordIndex=None, current_texture=None)
 
     @staticmethod
     def indexedFaceSet(
