@@ -676,18 +676,7 @@ class GL:
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
-        """Função usada para renderizar IndexedTriangleStripSet."""
-        # A função indexedTriangleStripSet é usada para desenhar tiras de triângulos
-        # interconectados, você receberá as coordenadas dos pontos no parâmetro point, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedTriangleStripSet uma lista informando
-        # como conectar os vértices é informada em index, o valor -1 indica que a lista
-        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
+        
         pontos ={}
         for i, e in enumerate(index):
             if e != -1:
@@ -698,6 +687,7 @@ class GL:
                 drawPontos = pontos[i] + pontos[i+2] + pontos[i+1]
             else:
                 drawPontos = pontos[i] + pontos[i+1] + pontos[i+2]
+            
             GL.triangleSet(drawPontos, colors)
             
 
@@ -804,19 +794,31 @@ class GL:
 
     @staticmethod
     def sphere(radius, colors):
-        """Função usada para renderizar Esferas."""
-        # A função sphere é usada para desenhar esferas na cena. O esfera é centrada no
-        # (0, 0, 0) no sistema de coordenadas local. O argumento radius especifica o
-        # raio da esfera que está sendo criada. Para desenha essa esfera você vai
-        # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
-        # os triângulos.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print(
-            "Sphere : radius = {0}".format(radius)
-        )  # imprime no terminal o raio da esfera
-        print("Sphere : colors = {0}".format(colors))  # imprime no terminal as cores
-
+        points = []
+        for b in np.arange(0, math.pi, math.pi/50):
+            ring = []
+            z = radius*math.cos(b)
+            for a in np.arange(0, 2*math.pi, 2*math.pi/50):
+                x = radius*math.cos(a)*math.sin(b)
+                y = radius*math.sin(a)*math.sin(b)
+                ring.append([x, y, z])
+            points.append(ring)
+        
+        
+        for e in range(len(points)-1):
+            triangleStrip = []
+            for i in range(len(points[e])):
+                triangleStrip += points[e+1][i]
+                triangleStrip += points[e][i]
+            
+            triangleStrip += points[e+1][-1]
+            triangleStrip += points[e][-1]
+            triangleStrip += points[e+1][0]
+            triangleStrip += points[e][0]
+            
+            indexed_cords = [i for i in range(int(len(triangleStrip)/3))]
+            GL.indexedTriangleStripSet(triangleStrip, indexed_cords, colors)
+       
     @staticmethod
     def navigationInfo(headlight):
         """Características físicas do avatar do visualizador e do modelo de visualização."""

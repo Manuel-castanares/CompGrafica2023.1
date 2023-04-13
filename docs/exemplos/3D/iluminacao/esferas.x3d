@@ -11,7 +11,7 @@
       <Shape>
         <Sphere radius='1'/>
         <Appearance>
-          <Material specularColor='0.0 0.0 0.0' diffuseColor='0.5 0.5 1.0'/>
+          <Material specularColor='0.0 0.0 0.0' emissiveColor="0.5 0.5 0.5" diffuseColor='0.5 0.5 1.0'/>
         </Appearance>
       </Shape>
     </Transform>
@@ -20,7 +20,7 @@
       <Shape>
         <Sphere radius='1'/>
         <Appearance>
-          <Material specularColor='0.5 0.5 1.0' diffuseColor='0.5 0.5 1.0' shininess='0.2'/>
+          <Material specularColor='0.5 0.5 1.0' emissiveColor="0.5 0.5 0.5" diffuseColor='0.5 0.5 1.0' shininess='0.2'/>
         </Appearance>
       </Shape>
     </Transform>
