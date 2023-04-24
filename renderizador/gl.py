@@ -51,6 +51,8 @@ class GL:
         GL.P_mat = None
         GL.is_texture = False
         GL.cur_text = None
+        GL.headlight = False
+        GL.screen = None
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -346,15 +348,13 @@ class GL:
                 )
 
     @staticmethod
-    def triangleSet2D(vertices, colors):
+    def triangleSet2D(vertices, colors, og_points = None):
         hasZ = False
         if len(vertices) > 6:
             vertices_x_y = [vertices[0], vertices[1], vertices[3], vertices[4], vertices[6], vertices[7]]
             hasZ = True
         else:
             vertices_x_y = [vertices[0], vertices[1], vertices[2], vertices[3], vertices[4], vertices[5]]
-        
-       
         if GL.color_per_vertex:
             GL.triangleSet2DColorPerVertex(vertices_x_y, colors)
         elif GL.is_texture:
@@ -370,7 +370,7 @@ class GL:
             minY = int(min([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
             maxY = int(max([vertices_x_y[1], vertices_x_y[3], vertices_x_y[5]]))
             if hasZ:
-                GL.draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertices, e)
+                GL.draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertices, e, og_points)
             else:
                 GL.draw_if_not_z(minX, maxX, minY, maxY, vertices_x_y, e)
     
@@ -395,7 +395,8 @@ class GL:
 
     
     @staticmethod
-    def draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertecies_x_y_z, e):
+    def draw_if_has_z(minX, maxX, minY, maxY, vertices_x_y, vertecies_x_y_z, e, og_points=None):
+        
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
                 if GL.anti_aliasing:
@@ -413,12 +414,38 @@ class GL:
                             if(int(newColor[0]) != int(oldColor[0]) or int(newColor[1]) != int(oldColor[1]) or int(newColor[2]) != int(oldColor[2])):
                                 if GL.transp > 0:
                                     newColor[0], newColor[1], newColor[2] = newColor[0] + (oldColor[0] * GL.transp), newColor[1] + (oldColor[1] * GL.transp), newColor[2] + (oldColor[2] * GL.transp)
-                                
+                                if GL.headlight:
+                                    r, g, b = GL.calc_color_with_light(int(newColor[0]), int(newColor[1]), int(newColor[2]), og_points)
+                                else:
+                                    r, g, b = int(newColor[0]), int(newColor[1]), int(newColor[2])
                                 gpu.GPU.draw_pixel(
                                     [int(x), int(y)],
                                     gpu.GPU.RGB8,
-                                    [int(newColor[0]), int(newColor[1]), int(newColor[2])],
+                                    [r, g, b],
                                 )
+    @staticmethod
+    def calc_color_with_light(og_r, og_g, og_b, vertices_x_y_z):
+        
+        v1 = vertices_x_y_z[:3]
+        v2 = vertices_x_y_z[3:6]
+        v3 = vertices_x_y_z[6:]
+        
+        pv1 = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]]
+        pv2 = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]]
+
+        
+        norm_v1 = np.cross(pv2, pv1)
+
+        luz = [0, 0, 1]
+
+        res = np.dot(luz, norm_v1)
+        res = 0 if res < 0 else res * 10
+      
+        r = og_r * res
+        g = og_g * res
+        b = og_b * res
+        
+        return r, g, b
 
     @staticmethod
     def draw_if_not_z(minX, maxX, minY, maxY, vertices_x_y, e):
@@ -447,7 +474,7 @@ class GL:
                 GL.transp = colors["transparency"]
         except:
             pass
-
+        
         n_triangle = int(len(point) / 9)
 
         final_matrix = np.matmul(GL.look_at, GL.transformation_matrix)
@@ -462,15 +489,32 @@ class GL:
             p3 = np.array(
                 [[point[6 + 9 * i]], [point[7 + 9 * i]], [point[8 + 9 * i]], [1]]
             )
+            
 
             p1 = np.matmul(final_matrix, p1)
             p2 = np.matmul(final_matrix, p2)
             p3 = np.matmul(final_matrix, p3)
-
+            
             p1 = p1 / p1[3][0]
             p2 = p2 / p2[3][0]
             p3 = p3 / p3[3][0]
-            
+
+            og_points = [
+                p1[0][0],
+                p1[1][0],
+                p1[2][0],
+                p2[0][0],
+                p2[1][0],
+                p2[2][0],
+                p3[0][0],
+                p3[1][0],
+                p3[2][0],
+            ]
+
+
+            p1 = np.matmul(GL.screen, p1)
+            p2 = np.matmul(GL.screen, p2)
+            p3 = np.matmul(GL.screen, p3)
             points = [
                 int(p1[0][0]),
                 int(p1[1][0]),
@@ -482,8 +526,8 @@ class GL:
                 int(p3[1][0]),
                 p3[2][0],
             ]
-            
-            GL.triangleSet2D(points, colors)
+           
+            GL.triangleSet2D(points, colors, og_points)
 
     @staticmethod
     def calc_rotation(rot):
@@ -560,7 +604,7 @@ class GL:
             ]
         )
         GL.P_mat = P
-        screen = np.array(
+        GL.screen = np.array(
             [
                 [GL.width / 2, 0, 0, GL.width / 2],
                 [0, -GL.height / 2, 0, GL.height / 2],
@@ -571,7 +615,7 @@ class GL:
 
         GL.look_at = np.matmul(P, GL.look_at)
 
-        GL.look_at = np.matmul(screen, GL.look_at)
+        #GL.look_at = np.matmul(screen, GL.look_at)
 
         # print("Viewpoint : ", end="")
         # print("position = {0} ".format(position), end="")
@@ -827,11 +871,16 @@ class GL:
         # faz com que o visualizador forneça sempre uma luz do ponto de vista do usuário.
         # A luz headlight deve ser direcional, ter intensidade = 1, cor = (1 1 1),
         # ambientIntensity = 0,0 e direção = (0 0 −1).
-
+        intensidade = 1
+        cor = (1,1,1)
+        ambientIntensity = 0,0
+        direcao = (0, 0, -1)
+        GL.headlight = True
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print(
             "NavigationInfo : headlight = {0}".format(headlight)
         )  # imprime no terminal
+
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
