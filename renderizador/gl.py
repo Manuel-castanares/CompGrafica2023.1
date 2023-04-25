@@ -53,6 +53,8 @@ class GL:
         GL.cur_text = None
         GL.headlight = False
         GL.screen = None
+        GL.directional_light = None
+        GL.specular = None
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -435,12 +437,17 @@ class GL:
 
         
         norm_v1 = np.cross(pv2, pv1)
-
+        
+        norm_v1 = norm_v1/np.linalg.norm(norm_v1)
+        norm_v1 = [0, 0, 1]
         luz = [0, 0, 1]
+        #if GL.directional_light:
+         #   luz = GL.directional_light
+            
 
         res = np.dot(luz, norm_v1)
-        res = 0 if res < 0 else res * 10
-      
+        res = 0 if res < 0 else res 
+        
         r = og_r * res
         g = og_g * res
         b = og_b * res
@@ -884,22 +891,7 @@ class GL:
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
-        """Luz direcional ou paralela."""
-        # Define uma fonte de luz direcional que ilumina ao longo de raios paralelos
-        # em um determinado vetor tridimensional. Possui os campos básicos ambientIntensity,
-        # cor, intensidade. O campo de direção especifica o vetor de direção da iluminação
-        # que emana da fonte de luz no sistema de coordenadas local. A luz é emitida ao
-        # longo de raios paralelos de uma distância infinita.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("DirectionalLight : color = {0}".format(color))  # imprime no terminal
-        print(
-            "DirectionalLight : intensity = {0}".format(intensity)
-        )  # imprime no terminal
-        print(
-            "DirectionalLight : direction = {0}".format(direction)
-        )  # imprime no terminal
+        GL.directional_light = direction
 
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
