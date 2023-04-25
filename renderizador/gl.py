@@ -438,15 +438,15 @@ class GL:
         
         norm_v1 = np.cross(pv2, pv1)
         
-        norm_v1 = norm_v1/np.linalg.norm(norm_v1)
-        norm_v1 = [0, 0, 1]
+        #norm_v1 = norm_v1/np.linalg.norm(norm_v1)
+        #norm_v1 = [0, 0, 1]
         luz = [0, 0, 1]
         #if GL.directional_light:
          #   luz = GL.directional_light
             
 
         res = np.dot(luz, norm_v1)
-        res = 0 if res < 0 else res 
+        res = 0 if res < 0 else res * 10
         
         r = og_r * res
         g = og_g * res
